@@ -2,7 +2,7 @@
 
 An end-to-end statistical analysis project in SAS using multivariate hypothesis testing and principal component analysis (PCA) across biological, paired-measurement, and chemical datasets.
 
-The project demonstrates how SAS can be used to validate data, compare multivariate groups, analyse paired observations, reduce dimensionality, and communicate statistically meaningful findings.
+The project demonstrates how SAS can be used to validate data, assess statistical assumptions, compare multivariate groups, analyse paired observations, reduce dimensionality, and communicate statistically meaningful findings.
 
 ## Why This Project Matters
 
@@ -18,6 +18,8 @@ The analysis addresses four practical analytical questions:
 - SAS programming
 - PROC IML
 - PROC PRINCOMP
+- PROC DISCRIM
+- PROC UNIVARIATE
 - PROC TTEST
 - PROC CORR
 - PROC MEANS
@@ -26,7 +28,8 @@ The analysis addresses four practical analytical questions:
 - Principal component analysis
 - Dimensionality reduction
 - Covariance and correlation analysis
-- Statistical hypothesis testing
+- Statistical assumption checking
+- Mahalanobis-distance outlier screening
 - Data validation
 - Reproducible analytical workflows
 - Statistical interpretation and communication
@@ -40,15 +43,15 @@ File and schema validation
     ↓
 Missing-value / duplicate / range checks
     ↓
+Assumption diagnostics
+    ↓
 Exploratory summaries and correlation analysis
     ↓
 Multivariate hypothesis testing
     ↓
 PCA and dimensionality reduction
     ↓
-Statistical interpretation
-    ↓
-Reported findings
+Interpretation, verification and visual reporting
 ```
 
 ## Repository Structure
@@ -57,6 +60,7 @@ Reported findings
 programs/
     00_run_all.sas
     00_data_validation.sas
+    00_assumption_diagnostics.sas
     01_wbc_hotelling_and_pca.sas
     02_twin_hotelling.sas
     03_thc_pca.sas
@@ -66,18 +70,24 @@ data/
 
 results/
     assignment-results-summary.md
+    assumption-diagnostics.md
+    verification.md
+
+outputs/
+    figures/
+        wbc_pca_variance.svg
+        thc_pca_scree.svg
+        twin_mean_differences.svg
 
 docs/
     multivariate-analysis-assignment-2.docx
-
-outputs/
-    reserved for generated SAS outputs
 ```
 
 ### Main programs
 
-- `programs/00_run_all.sas` — master program that runs validation before all statistical analysis.
-- `programs/00_data_validation.sas` — checks required files and variables, status labels, missing values, ranges, and duplicate rows.
+- `programs/00_run_all.sas` — master program that runs validation and assumption diagnostics before the main statistical analysis.
+- `programs/00_data_validation.sas` — checks required files and variables, status labels, missing values, ranges, row counts, and duplicate rows.
+- `programs/00_assumption_diagnostics.sas` — screens normality, covariance homogeneity, and potential multivariate outliers.
 - `programs/01_wbc_hotelling_and_pca.sas` — two-sample Hotelling's T-square, univariate tests, and PCA for WBC groups.
 - `programs/02_twin_hotelling.sas` — paired Hotelling's T-square analysis.
 - `programs/03_thc_pca.sas` — descriptive analysis, correlations, scatterplot matrix, and PCA for 13 chemical variables.
@@ -90,11 +100,65 @@ In particular:
 
 - PCA eigenvalues are captured directly from `PROC PRINCOMP` using `OUTSTAT=`.
 - Sample sizes are calculated from the imported datasets.
-- Confidence-interval calculations use the generated PCA eigenvalues.
-- A validation program runs before the statistical analysis.
+- Confidence-interval calculations use generated PCA eigenvalues.
+- Validation runs before downstream statistical analysis.
+- Assumption diagnostics are separated from the main inferential code.
+- Potential outliers are flagged for review rather than silently deleted.
 - The master runner executes the project in a defined order.
+- Recovered datasets were independently checked against the historical results.
 
-This reduces the risk of stale results when the underlying data changes.
+This reduces the risk of stale results and makes analytical limitations visible.
+
+## Key Findings
+
+The recovered data reproduce the original numerical results:
+
+- WBC Hotelling's T-square p = **0.463**, providing no evidence of an overall multivariate difference between diseased and non-diseased groups.
+- The first three WBC components explain approximately **85.4%** of variance in the diseased group and **79.0%** in the non-diseased group.
+- Twin paired Hotelling's T-square p = **0.117**, so the original analysis does not reject a zero multivariate mean-difference vector.
+- The first three THC principal components explain approximately **66.5%** of total variation.
+
+See `results/verification.md` for the numerical verification record.
+
+## Visual Results
+
+### WBC PCA
+
+The diseased WBC group concentrates more variance in its first principal component than the non-diseased group.
+
+![WBC PCA variance explained](outputs/figures/wbc_pca_variance.svg)
+
+### THC PCA
+
+The scree plot shows three components above the eigenvalue-1 reference line, consistent with retaining the first three components under the Kaiser criterion.
+
+![THC PCA scree plot](outputs/figures/thc_pca_scree.svg)
+
+### Twin paired differences
+
+The four average paired differences are relatively small in magnitude, consistent with the non-significant overall Hotelling result.
+
+![Twin mean paired differences](outputs/figures/twin_mean_differences.svg)
+
+## Statistical Assumptions and Limitations
+
+Assumption checks are treated as part of the analysis rather than an afterthought.
+
+For the WBC comparison:
+
+- covariance homogeneity was not rejected in an independent Box's M-style check (p ≈ 0.265);
+- some individual variables showed evidence of non-normality;
+- a small number of observations were flagged by Mahalanobis-distance screening for review.
+
+For the Twin paired analysis:
+
+- all four difference variables showed clear univariate departures from normality;
+- three observations were flagged by Mahalanobis-distance screening;
+- the original paired Hotelling result is therefore retained with an explicit normality limitation.
+
+No flagged observation is automatically removed. Exclusion would require a substantive data-quality justification.
+
+See `results/assumption-diagnostics.md` for details.
 
 ## Analytical Methods
 
@@ -103,10 +167,11 @@ This reduces the risk of stale results when the underlying data changes.
 The WBC analysis compares six morphological variables between diseased and non-diseased observations using:
 
 - group descriptive statistics
-- covariance matrices
-- correlation matrices
+- covariance and correlation matrices
 - two-sample Hotelling's T-square
 - individual two-sample t-tests
+- covariance-homogeneity diagnostics
+- normality and outlier screening
 - PCA for each group
 
 ### WBC PCA
@@ -117,29 +182,15 @@ The SAS workflow captures eigenvalues directly from `PROC PRINCOMP` and uses the
 
 ### Twin paired analysis
 
-Paired differences are calculated across four measurements and analysed jointly using Hotelling's T-square.
+Paired differences are calculated across four measurements and analysed jointly using Hotelling's T-square. The portfolio version also documents the strong non-normality seen in those paired differences.
 
 ### THC chemical PCA
 
 The THC analysis examines 13 chemical variables using descriptive statistics, correlations, a scatterplot matrix, and PCA.
 
-`PROC PRINCOMP` uses the correlation matrix by default, which is appropriate when variables may differ in scale because each variable is effectively standardized before component extraction.
-
-## Key Findings From the Original Analysis
-
-The original analysis reported:
-
-- no statistically significant overall multivariate difference between diseased and non-diseased WBC groups (Hotelling's T-square p = 0.463);
-- approximately 85.4% of WBC variance captured by the first three components in the diseased group;
-- approximately 79.0% captured by the first three components in the non-diseased group;
-- no statistically significant multivariate mean difference in the paired twin analysis (p = 0.117);
-- approximately 66.5% of total THC chemical variation captured by the first three principal components.
-
-See `results/assignment-results-summary.md` for the detailed historical results.
+`PROC PRINCOMP` uses the correlation matrix by default, which standardizes the contribution of variables measured on different numerical scales before component extraction.
 
 ## Data Availability
-
-The original CSV datasets are not currently stored in this repository.
 
 The programs expect:
 
@@ -147,9 +198,9 @@ The programs expect:
 - `data/Dataset TWIN.csv`
 - `data/Dataset THC.csv`
 
-The original datasets have now been recovered and independently checked against the published statistical results. The main Hotelling's T-square and PCA values reproduce the historical results.
+The original datasets have been recovered and independently checked against the published statistical results.
 
-The raw datasets are not committed to this public repository until their redistribution rights are confirmed. See `results/verification.md` for the verification record.
+The raw datasets are not committed to this public repository until their redistribution rights are confirmed. This avoids assuming permission to republish coursework source data while still documenting the verification transparently.
 
 ## How To Run
 
@@ -159,18 +210,18 @@ The raw datasets are not committed to this public repository until their redistr
 4. Update `project_root` in `programs/00_run_all.sas`.
 5. Run `programs/00_run_all.sas`.
 
-The validation stage runs first and stops the workflow if a required input file or required variable is missing.
+The workflow checks inputs first, then runs assumption diagnostics before the main statistical analysis.
 
 ## Current Improvement Roadmap
 
 - Confirm whether the source datasets can be redistributed publicly.
-- Run the complete refactored workflow in SAS against the recovered datasets.
-- Export key SAS tables and plots into `outputs/`.
-- Add scree plots and other visual results directly to this README.
-- Add formal statistical-assumption diagnostics.
-- Expand interpretation of PCA loadings and component meaning.
+- Run the complete refactored workflow directly in SAS against the recovered datasets and archive selected SAS-native outputs.
+- Expand interpretation of PCA loadings so the retained components have clearer substantive meaning.
 - Add a concise methodology document for technical reviewers.
+- Rename the repository from its original coursework-oriented name to a portfolio-oriented name.
 
 ## Project Background
 
-This project originated from university coursework in multivariate statistics and has since been reorganised as a reproducible SAS analytics portfolio project. The original submission is retained in `docs/` for transparency, while the SAS programs are being improved independently for reproducibility, validation, and recruiter readability.
+This project originated from university coursework in multivariate statistics and has since been reorganised as a reproducible SAS analytics portfolio project.
+
+The original submission is retained in `docs/` for transparency, while the portfolio code is being improved independently for reproducibility, validation, statistical rigor, and recruiter readability.
