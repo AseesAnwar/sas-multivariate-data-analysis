@@ -218,7 +218,6 @@ The workflow checks inputs first, then runs assumption diagnostics before the ma
 - Run the complete refactored workflow directly in SAS against the recovered datasets and archive selected SAS-native outputs.
 - Expand interpretation of PCA loadings so the retained components have clearer substantive meaning.
 - Add a concise methodology document for technical reviewers.
-- Rename the repository from its original coursework-oriented name to a portfolio-oriented name.
 
 ## Project Background
 
