@@ -11,7 +11,8 @@
 # Local outputs
 outputs/*
 !outputs/.gitkeep
+!outputs/figures/
+!outputs/figures/*.svg
 
 # Operating system files
 .DS_Store
-
