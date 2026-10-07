@@ -55,7 +55,8 @@ proc iml;
                   chem8 chem9 chem10 chem11 chem12 chem13} into X;
     close thc;
 
-    lambda = lambda_row`[1:3];
+    lambda = lambda_row`;
+    lambda = lambda[1:3];
     n = nrow(X);
     alpha = 0.05;
     z = quantile("Normal", 1-alpha/2);
