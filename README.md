@@ -147,9 +147,9 @@ The programs expect:
 - `data/Dataset TWIN.csv`
 - `data/Dataset THC.csv`
 
-Because those files are currently unavailable in the repository, the published historical results have not yet been re-executed against the improved pipeline.
+The original datasets have now been recovered and independently checked against the published statistical results. The main Hotelling's T-square and PCA values reproduce the historical results.
 
-This is an explicit remaining reproducibility dependency rather than a hidden limitation.
+The raw datasets are not committed to this public repository until their redistribution rights are confirmed. See `results/verification.md` for the verification record.
 
 ## How To Run
 
@@ -163,8 +163,8 @@ The validation stage runs first and stops the workflow if a required input file 
 
 ## Current Improvement Roadmap
 
-- Restore or publish permitted versions of the source datasets.
-- Re-run the complete workflow against the restored data.
+- Confirm whether the source datasets can be redistributed publicly.
+- Run the complete refactored workflow in SAS against the recovered datasets.
 - Export key SAS tables and plots into `outputs/`.
 - Add scree plots and other visual results directly to this README.
 - Add formal statistical-assumption diagnostics.
