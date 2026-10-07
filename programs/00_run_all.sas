@@ -1,11 +1,11 @@
 /*
-    Multivariate Analysis Assignment 2
+    SAS Multivariate Data Analysis
     Master SAS runner
 
     Update project_root to the folder that contains this repository.
 */
 
-%let project_root = /home/u64477816/sas-multivariate-assignment-2;
+%let project_root = /home/u64477816/sas-multivariate-data-analysis;
 
 %include "&project_root/programs/00_data_validation.sas";
 %include "&project_root/programs/00_assumption_diagnostics.sas";
