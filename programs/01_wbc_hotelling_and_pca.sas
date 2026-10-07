@@ -1,6 +1,6 @@
 /*
-    Question 1 and Question 2
     WBC diseased vs non-diseased multivariate analysis and PCA.
+    All sample sizes and PCA eigenvalues are derived from the imported data.
 */
 
 %let wbc_file = &project_root/data/Dataset WBC.csv;
@@ -65,6 +65,7 @@ proc iml;
     pvalue = 1 - probf(F, df1, df2);
     fcrit = finv(1-alpha, df1, df2);
 
+    print n1 n2 p;
     print mean1[colname={"Eccentricity" "Area" "Perimeter" "Solidity" "Extent" "Diameter"}];
     print mean2[colname={"Eccentricity" "Area" "Perimeter" "Solidity" "Extent" "Diameter"}];
     print diff[colname={"Eccentricity" "Area" "Perimeter" "Solidity" "Extent" "Diameter"}];
@@ -77,24 +78,34 @@ proc ttest data=wbc;
     var Eccentricity Area Perimeter Solidity Extent Diameter;
 run;
 
-/* PCA for diseased WBC cells. */
+/* PCA for diseased WBC cells. OUTSTAT captures eigenvalues for downstream calculations. */
 proc princomp data=wbc(where=(Status="Diseased"))
     out=pca_diseased
+    outstat=pca_diseased_stat
     plots=(scree pattern);
     var Eccentricity Area Perimeter Solidity Extent Diameter;
 run;
 
-/* Diseased group: component equality tests using eigenvalues from PROC PRINCOMP. */
-proc iml;
-    lambda = {2.58295761,
-              1.59566664,
-              0.94656794,
-              0.45051455,
-              0.27338960,
-              0.15090366};
+data pca_diseased_eigen;
+    set pca_diseased_stat;
+    where _TYPE_ = "EIGENVAL";
+    keep Eccentricity Area Perimeter Solidity Extent Diameter;
+run;
 
-    n = 50;
-    p = 6;
+/* Diseased group: component equality tests using eigenvalues generated above. */
+proc iml;
+    use pca_diseased_eigen;
+    read all var {Eccentricity Area Perimeter Solidity Extent Diameter} into lambda_row;
+    close pca_diseased_eigen;
+
+    use wbc;
+    read all var {Eccentricity Area Perimeter Solidity Extent Diameter}
+        where(Status="Diseased") into X;
+    close wbc;
+
+    lambda = lambda_row`;
+    n = nrow(X);
+    p = ncol(X);
     result = {};
 
     do k = 0 to p-2;
@@ -113,16 +124,26 @@ proc iml;
         result = result // (k || m || lambda_bar || Q || df || p_Q || u || p_u);
     end;
 
+    print n p lambda;
     print result[colname={
         "k" "Remaining_PC" "Mean_Eigenvalue" "Q_Statistic"
         "DF" "Q_p_value" "u_Statistic" "u_p_value"
     }];
 quit;
 
-/* Diseased group: confidence intervals for first two eigenvalues. */
+/* Diseased group: confidence intervals for the first two eigenvalues. */
 proc iml;
-    lambda = {2.5829576, 1.5956666};
-    n = 50;
+    use pca_diseased_eigen;
+    read all var {Eccentricity Area Perimeter Solidity Extent Diameter} into lambda_row;
+    close pca_diseased_eigen;
+
+    use wbc;
+    read all var {Eccentricity Area Perimeter Solidity Extent Diameter}
+        where(Status="Diseased") into X;
+    close wbc;
+
+    lambda = lambda_row`[1:2];
+    n = nrow(X);
     alpha = 0.05;
     z = quantile("Normal", 1-alpha/2);
 
@@ -130,6 +151,7 @@ proc iml;
     lower = lambda - z#se;
     upper = lambda + z#se;
 
+    print n;
     print (lambda || se || lower || upper)
         [colname={"Eigenvalue" "SE" "Lower_95CI" "Upper_95CI"}
          rowname={"lambda1" "lambda2"}];
@@ -138,21 +160,31 @@ quit;
 /* PCA for non-diseased WBC cells. */
 proc princomp data=wbc(where=(Status="Non-diseased"))
     out=pca_nondiseased
+    outstat=pca_nondiseased_stat
     plots=(scree pattern);
     var Eccentricity Area Perimeter Solidity Extent Diameter;
 run;
 
-/* Non-diseased group: component equality tests using eigenvalues from PROC PRINCOMP. */
-proc iml;
-    lambda = {2.01210359,
-              1.70308995,
-              1.02398090,
-              0.67193663,
-              0.34271819,
-              0.24617075};
+data pca_nondiseased_eigen;
+    set pca_nondiseased_stat;
+    where _TYPE_ = "EIGENVAL";
+    keep Eccentricity Area Perimeter Solidity Extent Diameter;
+run;
 
-    n = 50;
-    p = 6;
+/* Non-diseased group: component equality tests using generated eigenvalues. */
+proc iml;
+    use pca_nondiseased_eigen;
+    read all var {Eccentricity Area Perimeter Solidity Extent Diameter} into lambda_row;
+    close pca_nondiseased_eigen;
+
+    use wbc;
+    read all var {Eccentricity Area Perimeter Solidity Extent Diameter}
+        where(Status="Non-diseased") into X;
+    close wbc;
+
+    lambda = lambda_row`;
+    n = nrow(X);
+    p = ncol(X);
     result = {};
 
     do k = 0 to p-2;
@@ -171,16 +203,26 @@ proc iml;
         result = result // (k || m || lambda_bar || Q || df || p_Q || u || p_u);
     end;
 
+    print n p lambda;
     print result[colname={
         "k" "Remaining_PC" "Mean_Eigenvalue" "Q_Statistic"
         "DF" "Q_p_value" "u_Statistic" "u_p_value"
     }];
 quit;
 
-/* Non-diseased group: confidence intervals for first two eigenvalues. */
+/* Non-diseased group: confidence intervals for the first two eigenvalues. */
 proc iml;
-    lambda = {2.0121036, 1.70309};
-    n = 50;
+    use pca_nondiseased_eigen;
+    read all var {Eccentricity Area Perimeter Solidity Extent Diameter} into lambda_row;
+    close pca_nondiseased_eigen;
+
+    use wbc;
+    read all var {Eccentricity Area Perimeter Solidity Extent Diameter}
+        where(Status="Non-diseased") into X;
+    close wbc;
+
+    lambda = lambda_row`[1:2];
+    n = nrow(X);
     alpha = 0.05;
     z = quantile("Normal", 1-alpha/2);
 
@@ -188,8 +230,8 @@ proc iml;
     lower = lambda - z#se;
     upper = lambda + z#se;
 
+    print n;
     print (lambda || se || lower || upper)
         [colname={"Eigenvalue" "SE" "Lower_95CI" "Upper_95CI"}
          rowname={"lambda1" "lambda2"}];
 quit;
-
