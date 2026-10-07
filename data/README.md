@@ -6,7 +6,7 @@ The analysis requires three CSV files:
 - `Dataset TWIN.csv`
 - `Dataset THC.csv`
 
-These source datasets are not currently included in the repository.
+The original source datasets have been recovered for verification but are not currently included in the public repository because redistribution rights have not yet been confirmed.
 
 ## Expected schemas
 
@@ -47,4 +47,4 @@ The master script runs validation before downstream statistical analysis.
 
 ## Reproducibility note
 
-Until the source datasets are restored or a redistributable version is added, a fresh clone of this repository cannot reproduce the historical numerical results. This limitation is documented deliberately so users are not given the impression that the current repository is fully self-contained.
+A fresh clone is not yet fully self-contained because the raw datasets are withheld pending redistribution review. The recovered files were used to independently verify the published numerical results; see `../results/verification.md`.
