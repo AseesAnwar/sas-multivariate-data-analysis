@@ -142,7 +142,8 @@ proc iml;
         where(Status="Diseased") into X;
     close wbc;
 
-    lambda = lambda_row`[1:2];
+    lambda = lambda_row`;
+    lambda = lambda[1:2];
     n = nrow(X);
     alpha = 0.05;
     z = quantile("Normal", 1-alpha/2);
@@ -221,7 +222,8 @@ proc iml;
         where(Status="Non-diseased") into X;
     close wbc;
 
-    lambda = lambda_row`[1:2];
+    lambda = lambda_row`;
+    lambda = lambda[1:2];
     n = nrow(X);
     alpha = 0.05;
     z = quantile("Normal", 1-alpha/2);
