@@ -70,10 +70,29 @@ run;
 proc sql noprint;
     select count(*) into :wbc_bad_status trimmed
     from wbc_unexpected_status;
+
+    select count(*) into :wbc_n trimmed
+    from wbc_validate;
+
+    select sum(Status="Diseased"),
+           sum(Status="Non-diseased")
+        into :wbc_diseased_n trimmed,
+             :wbc_nondiseased_n trimmed
+    from wbc_validate;
 quit;
+
+%put NOTE: WBC observation count = &wbc_n;
+%put NOTE: WBC Diseased count = &wbc_diseased_n;
+%put NOTE: WBC Non-diseased count = &wbc_nondiseased_n;
 
 %if &wbc_bad_status > 0 %then
     %put WARNING: WBC dataset contains &wbc_bad_status observation(s) with unexpected Status values.;
+
+%if &wbc_n ne 100 %then
+    %put WARNING: Expected 100 WBC observations based on the original project data, but found &wbc_n.;
+
+%if &wbc_diseased_n ne 50 or &wbc_nondiseased_n ne 50 %then
+    %put WARNING: Expected 50 Diseased and 50 Non-diseased WBC observations.;
 
 proc sort data=wbc_validate out=wbc_unique nodupkey dupout=wbc_duplicates;
     by _all_;
@@ -108,9 +127,17 @@ run;
 
 proc sql noprint;
     select count(*) into :twin_dup_count trimmed from twin_duplicates;
+    select count(*) into :twin_n trimmed from twin_validate;
 quit;
 
-%put NOTE: Twin duplicate row count = &twin_dup_count;
+%put NOTE: Twin observation count = &twin_n;
+%put NOTE: Twin exact duplicate measurement-row count = &twin_dup_count;
+
+%if &twin_n ne 30 %then
+    %put WARNING: Expected 30 Twin observations based on the original project data, but found &twin_n.;
+
+%if &twin_dup_count > 0 %then
+    %put NOTE: Duplicate Twin measurement rows are flagged for review only; they are not removed automatically.;
 
 proc import datafile="&thc_file"
     out=thc_validate
@@ -136,8 +163,13 @@ run;
 
 proc sql noprint;
     select count(*) into :thc_dup_count trimmed from thc_duplicates;
+    select count(*) into :thc_n trimmed from thc_validate;
 quit;
 
+%put NOTE: THC observation count = &thc_n;
 %put NOTE: THC duplicate row count = &thc_dup_count;
+
+%if &thc_n ne 178 %then
+    %put WARNING: Expected 178 THC observations based on the original project data, but found &thc_n.;
 
 title;
