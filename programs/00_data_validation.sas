@@ -9,7 +9,7 @@
 %let thc_file = &project_root/data/Dataset THC.csv;
 
 %macro assert_file(path=, label=);
-    %if not %sysfunc(fileexist("&path")) %then %do;
+    %if not %sysfunc(fileexist(&path)) %then %do;
         %put ERROR: Required &label file was not found at &path;
         %abort cancel;
     %end;
